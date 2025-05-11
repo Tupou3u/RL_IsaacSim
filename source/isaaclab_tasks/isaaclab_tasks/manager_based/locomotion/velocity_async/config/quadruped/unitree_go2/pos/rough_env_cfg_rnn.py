@@ -58,8 +58,8 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
         self.observations.policy.joint_pos.params["asset_cfg"].joint_names = self.joint_names
         self.observations.policy.joint_vel.params["asset_cfg"].joint_names = self.joint_names
 
-        self.observations.policy.actions = None
-        self.observations.critic.actions = None
+        # self.observations.policy.actions = None
+        # self.observations.critic.actions = None
 
         # ------------------------------Actions------------------------------
 
@@ -68,23 +68,67 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
 
         # ------------------------------Events------------------------------
 
+        self.events.randomize_rigid_joint_mass = None
+        self.events.randomize_rigid_body_inertia = None
+        self.events.randomize_com_positions = None
+        self.events.randomize_apply_external_force_torque = None
+
+        # self.events.randomize_reset_base.params = {
+        #     "pose_range": {
+        #         "x": (-0.5, 0.5),
+        #         "y": (-0.5, 0.5),
+        #         "z": (0.0, 0.2),
+        #         "roll": (-3.14, 3.14),
+        #         "pitch": (-3.14, 3.14),
+        #         "yaw": (-3.14, 3.14),
+        #     },
+        #     "velocity_range": {
+        #         "x": (-0.5, 0.5),
+        #         "y": (-0.5, 0.5),
+        #         "z": (-0.5, 0.5),
+        #         "roll": (-0.5, 0.5),
+        #         "pitch": (-0.5, 0.5),
+        #         "yaw": (-0.5, 0.5),
+        #     },
+        # }
 
         # ------------------------------Rewards------------------------------
 
+        # self.rewards.foot_clearance.weight = 0.0
+        # self.rewards.gait.weight = 0.0
+        # self.rewards.air_time_variance.weight = 0.0
+        # self.rewards.base_motion.weight = 0.0
+        # self.rewards.base_orientation.weight = 0.0
+        # self.rewards.foot_slip.weight = 0.0
+        # self.rewards.joint_pos.weight = 0.0
+        # self.rewards.undesired_contacts.weight = 0.0
+        # self.rewards.base_height_l2.weight = -10.0
+        
+        
+        self.rewards.gait.weight = 0.0
+        self.rewards.base_motion.weight = 0.0
+        self.rewards.contact_forces.weight = -1e-3
+        self.rewards.feet_contact_without_cmd.weight = 0.25
+        self.rewards.joint_pos_limits.weight = -10.0
+
+        self.rewards.lin_vel_z_l2.weight = -2.0
+        self.rewards.ang_vel_xy_l2.weight = -0.05
+        # # self.rewards.lin_acc_z_l2.weight = -1.0
 
         # ------------------------------Terminations------------------------------
 
         self.terminations.base_contact = None
-        self.terminations.hip_contact = None
-        self.terminations.thigh_contact = None
-        self.terminations.calf_contact = None
-        self.terminations.bad_orientation = None
 
         # ------------------------------Commands------------------------------
 
         self.commands.base_velocity.ranges.lin_vel_x = (-1.0, 2.0) 
         self.commands.base_velocity.ranges.lin_vel_y = (-1.0, 1.0)
         self.commands.base_velocity.ranges.ang_vel_z = (-2.0, 2.0)
+
+        # self.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0) 
+        # self.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
+        # self.commands.base_velocity.ranges.ang_vel_z = (0.0, 0.0)
+        # self.commands.base_velocity.ranges.heading = (0.0, 0.0)
 
 
         if self.__class__.__name__ == "Go2RoughEnvCfg_rnn":

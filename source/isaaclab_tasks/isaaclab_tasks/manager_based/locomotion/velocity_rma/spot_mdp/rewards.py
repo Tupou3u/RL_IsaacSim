@@ -281,34 +281,3 @@ def joint_velocity_penalty(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) ->
     asset: Articulation = env.scene[asset_cfg.name]
     return torch.linalg.norm((asset.data.joint_vel), dim=1)
 
-
-# ---------------------------------------------------------------------------------------------------
-
-def action_smoothness_joint_pos_penalty(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """Penalize large instantaneous changes in the network action output"""
-    return torch.linalg.norm((env.action_manager.action[:, :12] - env.action_manager.prev_action[:, :12]), dim=1)
-
-
-def joint_position_penalty_hip(
-    env: ManagerBasedRLEnv, 
-    asset_cfg: SceneEntityCfg, 
-    stand_still_scale: float, 
-    velocity_threshold: float
-) -> torch.Tensor:
-    asset: Articulation = env.scene[asset_cfg.name]
-    cmd_y = torch.abs(env.command_manager.get_command("base_velocity")[:, 1])
-    cmd_z = torch.abs(env.command_manager.get_command("base_velocity")[:, 2])
-    body_vel_y = torch.abs(asset.data.root_lin_vel_b[:, 1])
-    body_vel_z = torch.abs(asset.data.root_lin_vel_b[:, 2])
-    reward = torch.linalg.norm((asset.data.joint_pos - asset.data.default_joint_pos), dim=1)
-    rew_y = torch.where(
-        torch.logical_or(cmd_y > velocity_threshold, body_vel_y > velocity_threshold), 
-        reward, 
-        stand_still_scale * reward
-    )
-    rew_z = torch.where(
-        torch.logical_or(cmd_z > velocity_threshold, body_vel_z > velocity_threshold), 
-        reward, 
-        rew_y
-    )
-    return rew_z

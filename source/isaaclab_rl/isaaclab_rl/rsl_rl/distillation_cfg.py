@@ -40,15 +40,12 @@ class RslRlDistillationStudentTeacherCfg:
 
 @configclass
 class RslRlDistillationCNNStudentTeacherCfg(RslRlDistillationStudentTeacherCfg):
-    class_name: str = "CNNStudentTeacher"
-    student_cnn_kernel_size: int = MISSING
-    student_cnn_stride: int = MISSING
+    class_name: str = MISSING
+    student_cnn_kernel_sizes: list[int] | list[tuple[int, int]] = MISSING
+    student_cnn_strides: list[int] | list[tuple[int, int]] = MISSING
     student_cnn_filters: list[int] = MISSING
-    student_paddings: list[int] = MISSING
-    teacher_cnn_kernel_size: int = MISSING
-    teacher_cnn_stride: int = MISSING
-    teacher_cnn_filters: list[int] = MISSING
-    teacher_paddings: list[int] = MISSING
+    student_cnn_paddings: list[int] | list[tuple[int, int]] = MISSING
+    student_cnn_dilations: list[int] | list[tuple[int, int]] = MISSING
 
 
 @configclass

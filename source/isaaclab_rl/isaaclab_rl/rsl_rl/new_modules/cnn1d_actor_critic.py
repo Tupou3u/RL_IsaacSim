@@ -7,7 +7,7 @@ from torch.distributions import Normal
 from rsl_rl.utils import resolve_nn_activation
 
 
-class CNNActorCritic(nn.Module):
+class CNN1d_ActorCritic(nn.Module):
     is_recurrent = False
 
     def __init__(
@@ -40,8 +40,15 @@ class CNNActorCritic(nn.Module):
 
         # Policy
         actor_layers = []
-        mlp_input_dim_a = num_actor_obs
-        for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(in_channels, out_channels, cnn_kernel_sizes, cnn_strides, cnn_paddings, cnn_dilations):
+        a_cnn_out = num_actor_obs
+        for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(
+            in_channels, 
+            out_channels, 
+            cnn_kernel_sizes, 
+            cnn_strides, 
+            cnn_paddings, 
+            cnn_dilations
+        ):
             actor_layers.append(nn.Conv1d(
                 in_channels=in_ch,
                 out_channels=out_ch,
@@ -51,12 +58,10 @@ class CNNActorCritic(nn.Module):
                 dilation=dilation
             ))
             actor_layers.append(activation)
-            mlp_input_dim_a = (mlp_input_dim_a + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+            a_cnn_out = (a_cnn_out + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
 
         actor_layers.append(nn.Flatten())
-        mlp_input_dim_a = mlp_input_dim_a * out_channels[-1]
-
-        actor_layers.append(nn.Linear(mlp_input_dim_a, actor_hidden_dims[0]))
+        actor_layers.append(nn.Linear(a_cnn_out * out_channels[-1], actor_hidden_dims[0]))
         actor_layers.append(activation)
         for layer_index in range(len(actor_hidden_dims)):
             if layer_index == len(actor_hidden_dims) - 1:
@@ -68,8 +73,15 @@ class CNNActorCritic(nn.Module):
 
         # Value function
         critic_layers = []
-        mlp_input_dim_c = num_critic_obs
-        for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(in_channels, out_channels, cnn_kernel_sizes, cnn_strides, cnn_paddings, cnn_dilations):
+        c_cnn_out = num_actor_obs
+        for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(
+            in_channels, 
+            out_channels, 
+            cnn_kernel_sizes, 
+            cnn_strides, 
+            cnn_paddings, 
+            cnn_dilations
+        ):
             critic_layers.append(nn.Conv1d(
                 in_channels=in_ch,
                 out_channels=out_ch,
@@ -79,12 +91,10 @@ class CNNActorCritic(nn.Module):
                 dilation=dilation
             ))
             critic_layers.append(activation)
-            mlp_input_dim_c = (mlp_input_dim_c + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+            c_cnn_out = (c_cnn_out + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
 
         critic_layers.append(nn.Flatten())
-        mlp_input_dim_c = mlp_input_dim_c * out_channels[-1]
-
-        critic_layers.append(nn.Linear(mlp_input_dim_c, critic_hidden_dims[0]))
+        critic_layers.append(nn.Linear(c_cnn_out * out_channels[-1], critic_hidden_dims[0]))
         critic_layers.append(activation)
         for layer_index in range(len(critic_hidden_dims)):
             if layer_index == len(critic_hidden_dims) - 1:
@@ -94,9 +104,9 @@ class CNNActorCritic(nn.Module):
                 critic_layers.append(activation)
         self.critic = nn.Sequential(*critic_layers)
 
-        print(f"Actor CNN+MLP: {self.actor}")
+        print(f"Actor CNN1d+MLP: {self.actor}")
         print(f"Actor parameters: {sum([p.numel() for p in self.actor.parameters()])}")
-        print(f"Critic CNN+MLP: {self.critic}")
+        print(f"Critic CNN1d+MLP: {self.critic}")
         print(f"Critic parameters: {sum([p.numel() for p in self.critic.parameters()])}")
 
         # Action noise

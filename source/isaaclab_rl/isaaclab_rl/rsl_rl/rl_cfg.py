@@ -44,7 +44,7 @@ class RslRlPpoActorCriticCfg:
 
 @configclass
 class RslRlPpoCNNActorCriticCfg(RslRlPpoActorCriticCfg):
-    class_name: str = "CNNActorCritic"
+    class_name: str = MISSING
     cnn_kernel_sizes: list = MISSING
     cnn_strides: list = MISSING
     cnn_filters: list = MISSING

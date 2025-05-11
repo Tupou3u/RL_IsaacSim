@@ -7,8 +7,9 @@ from isaaclab_rl.rsl_rl import (
     RslRlPpoActorCriticCfg,
     RslRlPpoCNNActorCriticCfg,
     RslRlPpoAlgorithmCfg, 
-    RslRlDistillationCNNStudentTeacherCfg,
     RslRlDistillationStudentTeacherCfg,
+    RslRlDistillationStudentTeacherRecurrentCfg,
+    RslRlDistillationCNNStudentTeacherCfg,
     RslRlDistillationAlgorithmCfg
 )
 
@@ -27,21 +28,21 @@ class Go2RoughPPORunnerCfg_Teacher(RslRlOnPolicyRunnerCfg):
         activation="elu"
     )
     # policy = RslRlPpoCNNActorCriticCfg(
+    #     class_name='CNN1d_ActorCritic',
     #     init_noise_std=1.0,
-    #     actor_hidden_dims=[64, 256, 256], 
-    #     critic_hidden_dims=[64, 256, 256],  
+    #     actor_hidden_dims=[128, 128, 128], 
+    #     critic_hidden_dims=[128, 128, 128],  
     #     activation="elu",
-    #     cnn_kernel_sizes=[5, 5, 5, 5],
-    #     cnn_strides=[1, 2, 2, 2],
-    #     cnn_filters=[32, 32, 32, 16],
-    #     cnn_paddings=[2, 2, 2, 2],
-    #     cnn_dilations=[1, 1, 1, 1]
+    #     cnn_kernel_size=3,
+    #     cnn_stride=3,
+    #     cnn_filters=[32, 16, 8],
+    #     paddings=[0, 1, 1]
     # )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.1,
-        entropy_coef=0.01,  # 0.01  0.0025
+        entropy_coef=0.0025,
         num_learning_epochs=5,
         num_mini_batches=8,
         learning_rate=1.0e-4,
@@ -70,20 +71,47 @@ class Go2RoughPPORunnerCfg_Policy(RslRlOnPolicyRunnerCfg):
     save_interval = 500  
     experiment_name = "go2_velocity_rma_rough"
     empirical_normalization = False
-    policy = RslRlDistillationCNNStudentTeacherCfg(
-        init_noise_std=1.0,
-        student_hidden_dims=[256, 256], 
-        teacher_hidden_dims=[512, 256, 128], 
-        activation="elu",
-        student_cnn_kernel_size=3,
-        student_cnn_stride=3,
-        student_cnn_filters=[32, 16, 8],
-        student_paddings=[0, 0, 1],
-        teacher_cnn_kernel_size=3,
-        teacher_cnn_stride=3,
-        teacher_cnn_filters=[32, 16, 8],
-        teacher_paddings=[0, 1, 1],
+    policy = RslRlDistillationStudentTeacherCfg(
+        init_noise_std=0.1,
+        student_hidden_dims=[128, 128, 128], 
+        teacher_hidden_dims=[128, 128, 128], 
+        activation="elu"
     )
+    # policy = RslRlDistillationStudentTeacherRecurrentCfg(
+    #     init_noise_std=0.1,
+    #     student_hidden_dims=[128, 128], 
+    #     teacher_hidden_dims=[128, 128, 128], 
+    #     activation="elu",
+    #     rnn_type="lstm",
+    #     rnn_hidden_dim=128,
+    #     rnn_num_layers=1,
+    #     teacher_recurrent=False
+    # )
+    # policy = RslRlDistillationCNNStudentTeacherCfg(
+    #     class_name="CNN1d_StudentTeacher",
+    #     # class_name="CNN1d_o1_StudentTeacher",
+    #     init_noise_std=0.1,
+    #     student_hidden_dims=[128, 128, 128], 
+    #     teacher_hidden_dims=[128, 128, 128], 
+    #     activation="elu",
+    #     student_cnn_kernel_sizes=[3, 5, 5, 5, 5],
+    #     student_cnn_strides=[3, 2, 2, 2, 2],
+    #     student_cnn_filters=[128, 64, 32, 16, 8],
+    #     student_cnn_paddings=[0, 2, 2, 2, 2],
+    #     student_cnn_dilations=[1, 1, 1, 1, 1]
+    # )
+    # policy = RslRlDistillationCNNStudentTeacherCfg(
+    #     class_name="CNN2d_StudentTeacher",
+    #     init_noise_std=0.1,
+    #     student_hidden_dims=[128, 128, 128], 
+    #     teacher_hidden_dims=[128, 128, 128], 
+    #     activation="elu",
+    #     student_cnn_kernel_sizes=[(5, 3), (5, 5), (5, 5), (5, 1)],
+    #     student_cnn_strides=[(2, 3), (2, 2), (2, 2), (2, 1)],
+    #     student_cnn_filters=[128, 64, 32, 16],
+    #     student_cnn_paddings=[(2, 0), (2, 2), (2, 2), (2, 0)],
+    #     student_cnn_dilations=[(1, 1), (1, 1), (1, 1), (1, 1)]
+    # )
     algorithm = RslRlDistillationAlgorithmCfg(
         num_learning_epochs=10,
         learning_rate=1e-4,

@@ -19,28 +19,14 @@ class Go2RoughPPORunnerCfg_Teacher_rnn(RslRlOnPolicyRunnerCfg):
     save_interval = 500  
     experiment_name = "go2_velocity_rma_rough_rnn"
     empirical_normalization = False
-    # policy = RslRlPpoActorCriticRecurrentCfg(
-    #     init_noise_std=1.0,
-    #     actor_hidden_dims=[256, 256, 256], 
-    #     critic_hidden_dims=[256, 256, 256],  
-    #     activation="elu",
-    #     rnn_type='lstm',
-    #     rnn_hidden_dim=256,
-    #     rnn_num_layers=1
-    # )
-    policy = RslRlPpoCNNActorCriticRecurrentCfg(
-        class_name="CNNActorCriticRecurrent",
+    policy = RslRlPpoActorCriticRecurrentCfg(
         init_noise_std=1.0,
-        actor_hidden_dims=[256, 256, 256], 
-        critic_hidden_dims=[256, 256, 256],  
+        actor_hidden_dims=[128, 128], 
+        critic_hidden_dims=[128, 128],  
         activation="elu",
         rnn_type='lstm',
-        rnn_hidden_dim=256,
-        rnn_num_layers=1,
-        cnn_kernel_size=3,
-        cnn_stride=3,
-        cnn_filters=[32, 16, 8],
-        paddings=[0, 0, 0]
+        rnn_hidden_dim=128,
+        rnn_num_layers=1
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,

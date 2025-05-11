@@ -36,44 +36,44 @@ def phase(env: ManagerBasedRLEnv, cycle_time: float) -> torch.Tensor:
     return phase_tensor
 
 
-def joint_eff(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def joint_eff_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.data.applied_torque
 
 
-def masses(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def masses_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.root_physx_view.get_masses()[:, asset_cfg.body_ids].to(env.device)
 
 
-def inertias(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def inertias_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.root_physx_view.get_inertias()[:, asset_cfg.body_ids].to(env.device)
 
 
-def dof_stiffnesses(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def dof_stiffnesses_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.root_physx_view.get_dof_stiffnesses().to(env.device)
 
 
-def dof_dampings(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def dof_dampings_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     return asset.root_physx_view.get_dof_dampings().to(env.device)
 
 
-def material_props(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def material_props_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     props = asset.root_physx_view.get_material_properties()[:, asset_cfg.body_ids]
     return props.reshape(env.num_envs, -1).to(env.device)
 
 
-def coms(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def coms_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     coms = asset.root_physx_view.get_coms()[:, asset_cfg.body_ids]
     return coms.reshape(env.num_envs, -1).to(env.device)
 
 
-def delays(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def delays_obs(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
     asset: Articulation = env.scene[asset_cfg.name]
     actuator = asset.actuators["legs"]
     if isinstance(actuator, DelayedPDActuatorCfg):
@@ -83,6 +83,6 @@ def delays(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
         ).to(env.device)
     return torch.zeros(env.num_envs, 3).to(env.device)
 
-def contact_forces(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+def contact_forces_obs(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     return contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids].reshape(env.num_envs, -1)

@@ -12,7 +12,7 @@ from torch.distributions import Normal
 from rsl_rl.utils import resolve_nn_activation
 
 
-class CNNStudentTeacher(nn.Module):
+class CNN1d_StudentTeacher(nn.Module):
     is_recurrent = False
 
     def __init__(
@@ -24,14 +24,11 @@ class CNNStudentTeacher(nn.Module):
         teacher_hidden_dims=[256, 256, 256],
         activation="elu",
         init_noise_std=0.1,
-        student_cnn_kernel_size=3,
-        student_cnn_stride=3,
+        student_cnn_kernel_sizes=[3, 3, 3],
+        student_cnn_strides=[3, 3, 3],
         student_cnn_filters=[32, 16, 8],
-        student_paddings=[0, 0, 0],
-        teacher_cnn_kernel_size=3,
-        teacher_cnn_stride=3,
-        teacher_cnn_filters=[32, 16, 8],
-        teacher_paddings=[0, 0, 0],
+        student_cnn_paddings=[0, 0, 1],
+        student_cnn_dilations=[1, 1, 1],
         **kwargs,
     ):
         if kwargs:
@@ -43,29 +40,32 @@ class CNNStudentTeacher(nn.Module):
         activation = resolve_nn_activation(activation)
         self.loaded_teacher = False  # indicates if teacher has been loaded
 
-        mlp_input_dim_s = num_student_obs
-        mlp_input_dim_t = num_teacher_obs
-
         # student
         s_out_channels = student_cnn_filters
         s_in_channels = [1] + student_cnn_filters[:-1]
         student_layers = []
-        mlp_input_dim_s = num_student_obs
-        for in_ch, out_ch, pad in zip(s_in_channels, s_out_channels, student_paddings):
+        s_cnn_out = num_student_obs
+        for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(
+            s_in_channels, 
+            s_out_channels, 
+            student_cnn_kernel_sizes, 
+            student_cnn_strides, 
+            student_cnn_paddings, 
+            student_cnn_dilations
+        ):
             student_layers.append(nn.Conv1d(
                 in_channels=in_ch,
                 out_channels=out_ch,
-                kernel_size=student_cnn_kernel_size,
-                stride=student_cnn_stride,
-                padding=pad
+                kernel_size=kernel_size,
+                stride=stride,
+                padding=padding,
+                dilation=dilation
             ))
             student_layers.append(activation)
-            mlp_input_dim_s = (mlp_input_dim_s + 2 * pad - student_cnn_kernel_size) // student_cnn_stride + 1
+            s_cnn_out = (s_cnn_out + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
 
         student_layers.append(nn.Flatten())
-        mlp_input_dim_s = mlp_input_dim_s * s_out_channels[-1]
-
-        student_layers.append(nn.Linear(mlp_input_dim_s, student_hidden_dims[0]))
+        student_layers.append(nn.Linear(s_cnn_out * s_out_channels[-1], student_hidden_dims[0]))
         student_layers.append(activation)
         for layer_index in range(len(student_hidden_dims)):
             if layer_index == len(student_hidden_dims) - 1:
@@ -76,25 +76,8 @@ class CNNStudentTeacher(nn.Module):
         self.student = nn.Sequential(*student_layers)
 
         # teacher
-        t_out_channels = teacher_cnn_filters
-        t_in_channels = [1] + teacher_cnn_filters[:-1]
         teacher_layers = []
-        mlp_input_dim_t = num_teacher_obs
-        for in_ch, out_ch, pad in zip(t_in_channels, t_out_channels, teacher_paddings):
-            teacher_layers.append(nn.Conv1d(
-                in_channels=in_ch,
-                out_channels=out_ch,
-                kernel_size=teacher_cnn_kernel_size,
-                stride=teacher_cnn_stride,
-                padding=pad
-            ))
-            teacher_layers.append(activation)
-            mlp_input_dim_t = (mlp_input_dim_t + 2 * pad - teacher_cnn_kernel_size) // teacher_cnn_stride + 1
-
-        teacher_layers.append(nn.Flatten())
-        mlp_input_dim_t = mlp_input_dim_t * s_out_channels[-1]
-
-        teacher_layers.append(nn.Linear(mlp_input_dim_t, teacher_hidden_dims[0]))
+        teacher_layers.append(nn.Linear(num_teacher_obs, teacher_hidden_dims[0]))
         teacher_layers.append(activation)
         for layer_index in range(len(teacher_hidden_dims)):
             if layer_index == len(teacher_hidden_dims) - 1:
@@ -133,6 +116,7 @@ class CNNStudentTeacher(nn.Module):
         return self.distribution.entropy().sum(dim=-1)
 
     def update_distribution(self, observations):
+        observations = observations.reshape(observations.shape[0], -1)
         mean = self.student(observations.unsqueeze(1))
         std = self.std.expand_as(mean)
         self.distribution = Normal(mean, std)
@@ -142,12 +126,13 @@ class CNNStudentTeacher(nn.Module):
         return self.distribution.sample()
 
     def act_inference(self, observations):
+        observations = observations.reshape(observations.shape[0], -1)
         actions_mean = self.student(observations.unsqueeze(1))
         return actions_mean
 
     def evaluate(self, teacher_observations):
         with torch.no_grad():
-            actions = self.teacher(teacher_observations.unsqueeze(1))
+            actions = self.teacher(teacher_observations)
         return actions
 
     def load_state_dict(self, state_dict, strict=True):
@@ -171,7 +156,7 @@ class CNNStudentTeacher(nn.Module):
                 if "actor." in key:
                     teacher_state_dict[key.replace("actor.", "")] = value
 
-            self.teacher.load_state_dict(teacher_state_dict)
+            self.teacher.load_state_dict(teacher_state_dict, strict=strict)
                 
             # set flag for successfully loading the parameters
             self.loaded_teacher = True

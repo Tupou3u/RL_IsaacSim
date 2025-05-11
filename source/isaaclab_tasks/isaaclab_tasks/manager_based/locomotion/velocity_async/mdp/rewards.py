@@ -494,3 +494,39 @@ def base_height_l2_from_command_exp(
     # Compute the L2 squared penalty
     err = torch.abs(asset.data.root_pos_w[:, 2] - adjusted_target_height)
     return torch.exp(-err / std)
+
+
+def contact_forces_penalty(
+        env: ManagerBasedRLEnv, 
+        sensor_cfg: SceneEntityCfg
+    ) -> torch.Tensor:
+    """Penalize contact forces as the amount of violations of the net contact force."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids]
+    return torch.sum(torch.linalg.norm(net_contact_forces, dim=2), dim=1)
+
+
+def feet_contact_without_cmd_reward(
+        env: ManagerBasedRLEnv, 
+        asset_cfg: SceneEntityCfg,
+        sensor_cfg: SceneEntityCfg,
+        velocity_threshold: float
+    ) -> torch.Tensor:
+    """Reward feet contact"""
+
+    asset: Articulation = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    contact = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids] > 0.0
+    reward = torch.sum(contact, dim=1).float()
+    command = torch.linalg.norm(env.command_manager.get_command("base_velocity"), dim=1)
+    body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    reward *= torch.logical_and(command < velocity_threshold, body_vel < velocity_threshold)
+    return reward
+
+
+def body_lin_acc_z_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize the linear acceleration of bodies using L2-kernel."""
+    asset: Articulation = env.scene[asset_cfg.name]
+    return torch.norm(asset.data.body_lin_acc_w[:, asset_cfg.body_ids, 2], dim=1)
