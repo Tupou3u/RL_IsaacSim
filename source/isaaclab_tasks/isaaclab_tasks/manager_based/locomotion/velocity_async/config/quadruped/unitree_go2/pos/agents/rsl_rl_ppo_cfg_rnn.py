@@ -21,7 +21,7 @@ class Go2RoughPPORunnerCfg_rnn(RslRlOnPolicyRunnerCfg):
         actor_hidden_dims=[128, 128], 
         critic_hidden_dims=[128, 128],  
         activation="elu",
-        rnn_type='lstm',
+        rnn_type='gru',
         rnn_hidden_dim=128,
         rnn_num_layers=1
     )
@@ -29,9 +29,11 @@ class Go2RoughPPORunnerCfg_rnn(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.1,
-        entropy_coef=0.0025,
+        entropy_coef=0.01,
+        # entropy_coef=0.0025,
         num_learning_epochs=5,
-        num_mini_batches=8,  # 4
+        num_mini_batches=8,
+        # num_mini_batches=4,
         learning_rate=1.0e-4,
         schedule="adaptive",
         gamma=0.99,

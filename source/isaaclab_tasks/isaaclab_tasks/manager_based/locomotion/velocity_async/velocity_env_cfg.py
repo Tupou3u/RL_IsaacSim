@@ -203,6 +203,11 @@ class ObservationsCfg:
             scale=1.0,
             clip=(-100, 100),
         )
+        contact_forces = ObsTerm(
+            func=mdp.contact_forces_obs,
+            params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot")},
+            scale=1.0,
+        )
 
 
         def __post_init__(self):

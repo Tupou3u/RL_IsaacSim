@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from isaaclab.assets import Articulation
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.actuators import DelayedPDActuatorCfg
+from isaaclab.sensors import ContactSensor, Imu
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
@@ -82,3 +83,7 @@ def delays(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
             dim=1
         ).to(env.device)
     return torch.zeros(env.num_envs, 3).to(env.device)
+
+def contact_forces_obs(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    return contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids].reshape(env.num_envs, -1)
