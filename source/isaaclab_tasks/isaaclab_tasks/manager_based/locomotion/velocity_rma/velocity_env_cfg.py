@@ -73,7 +73,7 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/base",
         update_period=0.02,
         offset=ImuCfg.OffsetCfg(pos=(-0.02557, 0.0, 0.04232)),
-        gravity_bias=(0.0, 0.0, 0.0)
+        gravity_bias=(0, 0, 0)
     )
     # lights
     sky_light = AssetBaseCfg(
@@ -120,6 +120,86 @@ class ActionsCfg:
 @configclass
 class ObservationsCfg:
     """Observation specifications for the MDP."""
+
+    # @configclass
+    # class TeacherCfg(ObsGroup):
+    #     """Observations for policy group."""
+
+    #     base_lin_vel = ObsTerm(
+    #         func=mdp.base_lin_vel,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     base_ang_vel = ObsTerm(
+    #         func=mdp.base_ang_vel,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     projected_gravity = ObsTerm(
+    #         func=mdp.projected_gravity,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     velocity_commands = ObsTerm(
+    #         func=mdp.generated_commands,
+    #         params={"command_name": "base_velocity"},
+    #         scale=1.0,
+    #     )
+    #     joint_pos = ObsTerm(
+    #         func=mdp.joint_pos_rel,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     joint_vel = ObsTerm(
+    #         func=mdp.joint_vel_rel,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     actions = ObsTerm(
+    #         func=mdp.last_action,
+    #         scale=1.0,
+    #     )
+    #     height_scan = ObsTerm(
+    #         func=mdp.height_scan,
+    #         params={"sensor_cfg": SceneEntityCfg("height_scanner")},
+    #         scale=1.0,
+    #         clip=(-100, 100)
+    #     )
+    #     joint_eff = ObsTerm(
+    #         func=mdp.joint_eff_obs,
+    #         scale=1.0,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #     )
+    #     masses = ObsTerm(
+    #         func=mdp.masses_obs,
+    #         params={"asset_cfg": SceneEntityCfg("robot", body_names=["base", ".*_hip", ".*_thigh", ".*_calf"])},
+    #         scale=1.0,
+    #     )
+    #     coms = ObsTerm(
+    #         func=mdp.coms_obs,
+    #         params={"asset_cfg": SceneEntityCfg("robot", body_names="base")},
+    #         scale=1.0,
+    #     )
+    #     delays = ObsTerm(
+    #         func=mdp.delays_obs,
+    #         params={"asset_cfg": SceneEntityCfg("robot")},
+    #         scale=1.0,
+    #     )
+    #     body_incoming_wrench = ObsTerm(
+    #         func=mdp.body_incoming_wrench,
+    #         params={"asset_cfg": SceneEntityCfg("robot", body_names=".*")},
+    #         scale=1.0,
+    #     )
+    #     contact_forces = ObsTerm(
+    #         func=mdp.contact_forces_obs,
+    #         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot")},
+    #         scale=1.0,
+    #     )
+
+    #     def __post_init__(self):
+    #         self.enable_corruption = True
+    #         self.concatenate_terms = True
+
 
     @configclass
     class TeacherCfg(ObsGroup):
@@ -180,14 +260,9 @@ class ObservationsCfg:
             params={"asset_cfg": SceneEntityCfg("robot", body_names="base")},
             scale=1.0,
         )
-        delays = ObsTerm(
-            func=mdp.delays_obs,
-            params={"asset_cfg": SceneEntityCfg("robot")},
-            scale=1.0,
-        )
         body_incoming_wrench = ObsTerm(
             func=mdp.body_incoming_wrench,
-            params={"asset_cfg": SceneEntityCfg("robot", body_names=".*")},
+            params={"asset_cfg": SceneEntityCfg("robot", body_names=[f"^(?!.*base).*"])},
             scale=1.0,
         )
         contact_forces = ObsTerm(
@@ -200,69 +275,6 @@ class ObservationsCfg:
             self.enable_corruption = True
             self.concatenate_terms = True
 
-    # @configclass
-    # class TeacherCfg(ObsGroup):
-    #     """Observations for policy group."""
-
-    #     imu_ang_vel = ObsTerm(
-    #         func=mdp.imu_ang_vel,
-    #         scale=1.0,
-    #         clip=(-100, 100)
-    #     )
-    #     imu_lin_acc = ObsTerm(
-    #         func=mdp.imu_lin_acc,
-    #         scale=1.0,
-    #         clip=(-100, 100)
-    #     )
-    #     velocity_commands = ObsTerm(
-    #         func=mdp.generated_commands,
-    #         params={"command_name": "base_velocity"},
-    #         scale=1.0,
-    #     )
-    #     joint_pos = ObsTerm(
-    #         func=mdp.joint_pos_rel,
-    #         scale=1.0,
-    #         params={"asset_cfg": SceneEntityCfg("robot")},
-    #     )
-    #     joint_vel = ObsTerm(
-    #         func=mdp.joint_vel_rel,
-    #         scale=1.0,
-    #         params={"asset_cfg": SceneEntityCfg("robot")},
-    #     )
-    #     actions = ObsTerm(
-    #         func=mdp.last_action,
-    #         scale=1.0,
-    #     )
-    #     height_scan = ObsTerm(
-    #         func=mdp.height_scan,
-    #         params={"sensor_cfg": SceneEntityCfg("height_scanner")},
-    #         scale=1.0,
-    #         clip=(-100, 100)
-    #     )
-    #     joint_eff = ObsTerm(
-    #         func=mdp.joint_eff_obs,
-    #         scale=1.0,
-    #         params={"asset_cfg": SceneEntityCfg("robot")},
-    #     )
-    #     masses = ObsTerm(
-    #         func=mdp.masses_obs,
-    #         params={"asset_cfg": SceneEntityCfg("robot", body_names=["base", ".*_hip", ".*_thigh", ".*_calf"])},
-    #         scale=1.0,
-    #     )
-    #     coms = ObsTerm(
-    #         func=mdp.coms_obs,
-    #         params={"asset_cfg": SceneEntityCfg("robot", body_names="base")},
-    #         scale=1.0,
-    #     )
-    #     contact_forces = ObsTerm(
-    #         func=mdp.contact_forces_obs,
-    #         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot")},
-    #         scale=1.0,
-    #     )
-
-    #     def __post_init__(self):
-    #         self.enable_corruption = True
-    #         self.concatenate_terms = True
 
     @configclass
     class PolicyCfg(ObsGroup):
@@ -276,6 +288,12 @@ class ObservationsCfg:
         )
         imu_lin_acc = ObsTerm(
             func=mdp.imu_lin_acc,
+            noise=Unoise(n_min=-0.1, n_max=0.1), 
+            scale=1.0,
+            clip=(-100, 100)
+        )
+        imu_projected_gravity = ObsTerm(
+            func=mdp.projected_gravity_imu,
             noise=Unoise(n_min=-0.1, n_max=0.1), 
             scale=1.0,
             clip=(-100, 100)
@@ -305,8 +323,8 @@ class ObservationsCfg:
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
-            self.history_length = 16
-            self.flatten_history_dim = False
+            # self.history_length = 16
+            # self.flatten_history_dim = False
 
     # observation groups
     policy: TeacherCfg = TeacherCfg()
@@ -346,7 +364,7 @@ class EventCfg:
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
         params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=['.*_hip', '.*_thigh', '.*_calf']),
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
             "mass_distribution_params": (0.9, 1.1), 
             "operation": "scale",
         },
@@ -441,23 +459,23 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     # -- task
-    # air_time = RewTerm(
-    #     func=spot_mdp.air_time_reward,
-    #     weight=0.0,
-    #     params={
-    #         "mode_time": 0.3,
-    #         "velocity_threshold": 0.3,
-    #         "asset_cfg": SceneEntityCfg("robot"),
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
-    #     },
-    # )
+    air_time = RewTerm(
+        func=spot_mdp.air_time_reward,
+        weight=0.0,
+        params={
+            "mode_time": 0.3,
+            "velocity_threshold": 0.3,
+            "asset_cfg": SceneEntityCfg("robot"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
+        },
+    )
 
     base_linear_velocity = RewTerm(
         func=spot_mdp.base_linear_velocity_reward,
         weight=5.0,
         params={
             "std": 1.0, 
-            "ramp_rate": 0.5, 
+            "ramp_rate": 1.0,
             "ramp_at_vel": 0.5, 
             "asset_cfg": SceneEntityCfg("robot")
         },
@@ -478,7 +496,7 @@ class RewardsCfg:
         params={
             "std": 0.05,
             "tanh_mult": 2.0,
-            "target_height": 0.05,
+            "target_height": 0.06,
             "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
         },
     )
@@ -533,7 +551,7 @@ class RewardsCfg:
     joint_acc = RewTerm(
         func=spot_mdp.joint_acceleration_penalty,
         weight=-1.0e-4,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint", ".*_thigh_joint"])},
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")}, 
     )
 
     joint_pos = RewTerm(
@@ -555,7 +573,7 @@ class RewardsCfg:
     joint_vel = RewTerm(
         func=spot_mdp.joint_velocity_penalty,
         weight=-1.0e-2, 
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint", ".*_thigh_joint"])},
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},  
     )
 
     # -----------------------------------------------------------------------------------------------------------
@@ -585,16 +603,32 @@ class RewardsCfg:
         },
     )
 
+    stand_still_without_cmd = RewTerm(
+        func=mdp.stand_still_without_cmd, 
+        weight=0.0, 
+        params={
+            "command_name": "base_velocity",
+            "command_threshold": 0.1,
+            "asset_cfg": SceneEntityCfg("robot"),
+        }
+    )
+
     contact_forces = RewTerm(
-        func=mdp.contact_forces_penalty,
+        func=mdp.contact_forces_reward,
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot")
         },
     )
 
+    # contact_forces = RewTerm(
+    #     func=mdp.contact_forces,
+    #     weight=0.0,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=""), "threshold": 100.0},
+    # )
+
     feet_contact_without_cmd = RewTerm(
-        func=mdp.feet_contact_without_cmd_reward,
+        func=mdp.feet_contact_without_cmd,
         weight=0.0,
         params={
             "asset_cfg": SceneEntityCfg("robot"),
@@ -625,6 +659,7 @@ class RewardsCfg:
             "asset_cfg": SceneEntityCfg("robot", body_names="base")
         }
     )
+
 
 
 @configclass
@@ -682,10 +717,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 10
+        self.decimation = 4
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.002
+        self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2**15
@@ -698,8 +733,9 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
 
         try:
             self.observations.policy.imu_lin_acc.scale = 1.0 / self.decimation
+            self.observations.teacher.imu_lin_acc.scale = 1.0 / self.decimation
         except:
-            pass
+            self.observations.policy.imu_lin_acc.scale = 1.0 / self.decimation
 
         # check if terrain levels curriculum is enabled - if so, enable curriculum for terrain generator
         # this generates terrains with increasing difficulty and is useful for training

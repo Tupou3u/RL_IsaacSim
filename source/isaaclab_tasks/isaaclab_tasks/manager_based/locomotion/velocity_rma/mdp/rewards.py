@@ -473,7 +473,7 @@ def base_height_l2_from_command_exp(
     return torch.exp(-err / std)
 
 
-def contact_forces_penalty(
+def contact_forces_reward(
         env: ManagerBasedRLEnv, 
         sensor_cfg: SceneEntityCfg
     ) -> torch.Tensor:
@@ -484,7 +484,7 @@ def contact_forces_penalty(
     return torch.sum(torch.linalg.norm(net_contact_forces, dim=2), dim=1)
 
 
-def feet_contact_without_cmd_reward(
+def feet_contact_without_cmd(
         env: ManagerBasedRLEnv, 
         asset_cfg: SceneEntityCfg,
         sensor_cfg: SceneEntityCfg,
@@ -498,7 +498,7 @@ def feet_contact_without_cmd_reward(
     contact = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids] > 0.0
     reward = torch.sum(contact, dim=1).float()
     command = torch.linalg.norm(env.command_manager.get_command("base_velocity"), dim=1)
-    body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1)
+    body_vel = torch.linalg.norm(torch.cat((asset.data.root_lin_vel_b[:, :2], asset.data.root_ang_vel_b[:, 2].unsqueeze(1)), dim=1), dim=1)
     reward *= torch.logical_and(command < velocity_threshold, body_vel < velocity_threshold)
     return reward
 

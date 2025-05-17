@@ -12,7 +12,7 @@ from torch.distributions import Normal
 from rsl_rl.utils import resolve_nn_activation
 
 
-class CNN1d_o1_StudentTeacher(nn.Module):
+class CNN2d_o1_StudentTeacher(nn.Module):
     is_recurrent = False
 
     def __init__(
@@ -24,11 +24,11 @@ class CNN1d_o1_StudentTeacher(nn.Module):
         teacher_hidden_dims=[256, 256, 256],
         activation="elu",
         init_noise_std=0.1,
-        student_cnn_kernel_sizes=[3, 3, 3],
-        student_cnn_strides=[3, 3, 3],
-        student_cnn_filters=[32, 16, 8],
-        student_cnn_paddings=[0, 0, 1],
-        student_cnn_dilations=[1, 1, 1],
+        student_cnn_kernel_sizes=[(5, 3), (5, 3), (5, 3)],
+        student_cnn_strides=[(2, 3), (2, 3), (2, 3)],
+        student_cnn_filters=[32, 32, 32],
+        student_cnn_paddings=[(2, 0), (2, 0), (2, 1)],
+        student_cnn_dilations=[(1, 1), (1, 1), (1, 1)],
         **kwargs,
     ):
         if kwargs:
@@ -40,16 +40,17 @@ class CNN1d_o1_StudentTeacher(nn.Module):
         activation = resolve_nn_activation(activation)
         self.loaded_teacher = False  # indicates if teacher has been loaded
 
-        self.num_obs = 16
-        self.len_obs = 48  # 45
+        self.s_h = 100  # На один меньше, чем общее количество
+        self.s_w = 45
         self.mlp_head = 64
 
         # student
-        s_out_channels = student_cnn_filters
+        cnn_student_layers = []
+        s_out_h = self.s_h
+        s_out_w = self.s_w
+        s_out_channels = student_cnn_filters[:]
         s_in_channels = [1] + student_cnn_filters[:-1]
 
-        cnn_student_layers = []
-        s_cnn_out = self.len_obs * (self.num_obs - 1)
         for in_ch, out_ch, kernel_size, stride, padding, dilation in zip(
             s_in_channels, 
             s_out_channels, 
@@ -58,7 +59,7 @@ class CNN1d_o1_StudentTeacher(nn.Module):
             student_cnn_paddings, 
             student_cnn_dilations
         ):
-            cnn_student_layers.append(nn.Conv1d(
+            cnn_student_layers.append(nn.Conv2d(
                 in_channels=in_ch,
                 out_channels=out_ch,
                 kernel_size=kernel_size,
@@ -67,15 +68,16 @@ class CNN1d_o1_StudentTeacher(nn.Module):
                 dilation=dilation
             ))
             cnn_student_layers.append(activation)
-            s_cnn_out = (s_cnn_out + 2 * padding - dilation * (kernel_size - 1) - 1) // stride + 1
+            s_out_h = (s_out_h + 2 * padding[0] - dilation[0] * (kernel_size[0] - 1) - 1) // stride[0] + 1
+            s_out_w = (s_out_w + 2 * padding[1] - dilation[1] * (kernel_size[1] - 1) - 1) // stride[1] + 1
 
         cnn_student_layers.append(nn.Flatten())
-        cnn_student_layers.append(nn.Linear(s_cnn_out * s_out_channels[-1], self.mlp_head))
+        cnn_student_layers.append(nn.Linear(s_out_h * s_out_w * s_out_channels[-1], self.mlp_head))
         cnn_student_layers.append(activation)
         self.cnn_student = nn.Sequential(*cnn_student_layers)
 
         student_layers = []
-        student_layers.append(nn.Linear(self.mlp_head + self.len_obs, student_hidden_dims[0]))
+        student_layers.append(nn.Linear(self.mlp_head + self.s_w, student_hidden_dims[0]))
         student_layers.append(activation)
         for layer_index in range(len(student_hidden_dims)):
             if layer_index == len(student_hidden_dims) - 1:
@@ -98,9 +100,11 @@ class CNN1d_o1_StudentTeacher(nn.Module):
         self.teacher = nn.Sequential(*teacher_layers)
         self.teacher.eval()
 
-        print(f"Student CNN: {self.cnn_student}")
+        print(f"Student CNN2d: {self.cnn_student}")
         print(f"Student MLP: {self.student}")
+        print(f"Student parameters: {sum([p.numel() for p in self.student.parameters()]) + sum([p.numel() for p in self.cnn_student.parameters()])}\n")
         print(f"Teacher MLP: {self.teacher}")
+        print(f"Teacher parameters: {sum([p.numel() for p in self.teacher.parameters()])}")
 
         # action noise
         self.std = nn.Parameter(init_noise_std * torch.ones(num_actions))
@@ -139,8 +143,8 @@ class CNN1d_o1_StudentTeacher(nn.Module):
         return self.distribution.sample()
 
     def act_inference(self, observations):
-        o_t = observations[:, -self.len_obs:]
-        h = observations[:, :-self.len_obs]
+        o_t = observations[:, -self.s_w:]
+        h = observations[:, :-self.s_w]
         z_t = self.cnn_student(h.unsqueeze(1))
         actions_mean = self.student(torch.cat((o_t, z_t), dim=1))
         return actions_mean
@@ -170,7 +174,6 @@ class CNN1d_o1_StudentTeacher(nn.Module):
             for key, value in state_dict.items():
                 if "actor." in key:
                     teacher_state_dict[key.replace("actor.", "")] = value
-
             self.teacher.load_state_dict(teacher_state_dict, strict=strict)
                 
             # set flag for successfully loading the parameters

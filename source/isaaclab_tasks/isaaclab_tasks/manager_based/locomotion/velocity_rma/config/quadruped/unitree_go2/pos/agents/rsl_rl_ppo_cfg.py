@@ -5,7 +5,6 @@ from isaaclab.utils import configclass
 from isaaclab_rl.rsl_rl import (
     RslRlOnPolicyRunnerCfg,  
     RslRlPpoActorCriticCfg,
-    RslRlPpoCNNActorCriticCfg,
     RslRlPpoAlgorithmCfg, 
     RslRlDistillationStudentTeacherCfg,
     RslRlDistillationStudentTeacherRecurrentCfg,
@@ -21,10 +20,17 @@ class Go2RoughPPORunnerCfg_Teacher(RslRlOnPolicyRunnerCfg):
     save_interval = 500  
     experiment_name = "go2_velocity_rma_rough"
     empirical_normalization = False
+    # policy = RslRlPpoActorCriticCfg(
+    #     init_noise_std=1.0,
+    #     actor_hidden_dims=[128, 128, 128], 
+    #     critic_hidden_dims=[128, 128, 128],  
+    #     activation="elu"
+    # )
     policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic_o1",
         init_noise_std=1.0,
-        actor_hidden_dims=[128, 128, 128], 
-        critic_hidden_dims=[128, 128, 128],  
+        actor_hidden_dims=[256, 128, 64], 
+        critic_hidden_dims=[256, 128, 64],  
         activation="elu"
     )
     # policy = RslRlPpoCNNActorCriticCfg(
@@ -44,7 +50,7 @@ class Go2RoughPPORunnerCfg_Teacher(RslRlOnPolicyRunnerCfg):
         clip_param=0.1,
         entropy_coef=0.0025,
         num_learning_epochs=5,
-        num_mini_batches=8,
+        num_mini_batches=4,
         learning_rate=1.0e-4,
         schedule="adaptive",
         gamma=0.99,
@@ -71,37 +77,38 @@ class Go2RoughPPORunnerCfg_Policy(RslRlOnPolicyRunnerCfg):
     save_interval = 500  
     experiment_name = "go2_velocity_rma_rough"
     empirical_normalization = False
-    policy = RslRlDistillationStudentTeacherCfg(
-        init_noise_std=0.1,
-        student_hidden_dims=[128, 128, 128], 
-        teacher_hidden_dims=[128, 128, 128], 
-        activation="elu"
-    )
-    # policy = RslRlDistillationStudentTeacherRecurrentCfg(
+    # policy = RslRlDistillationStudentTeacherCfg(
     #     init_noise_std=0.1,
-    #     student_hidden_dims=[128, 128], 
+    #     student_hidden_dims=[128, 128, 128], 
     #     teacher_hidden_dims=[128, 128, 128], 
-    #     activation="elu",
-    #     rnn_type="lstm",
-    #     rnn_hidden_dim=128,
-    #     rnn_num_layers=1,
-    #     teacher_recurrent=False
+    #     activation="elu"
     # )
+    policy = RslRlDistillationStudentTeacherRecurrentCfg(
+        init_noise_std=0.1,
+        student_hidden_dims=[128, 128], 
+        teacher_hidden_dims=[128, 128, 128], 
+        activation="elu",
+        rnn_type="lstm",
+        rnn_hidden_dim=128,
+        rnn_num_layers=1,
+        teacher_recurrent=False
+    )
     # policy = RslRlDistillationCNNStudentTeacherCfg(
-    #     class_name="CNN1d_StudentTeacher",
-    #     # class_name="CNN1d_o1_StudentTeacher",
+    #     # class_name="CNN1d_StudentTeacher",
+    #     class_name="CNN1d_o1_StudentTeacher",
     #     init_noise_std=0.1,
     #     student_hidden_dims=[128, 128, 128], 
     #     teacher_hidden_dims=[128, 128, 128], 
     #     activation="elu",
     #     student_cnn_kernel_sizes=[3, 5, 5, 5, 5],
     #     student_cnn_strides=[3, 2, 2, 2, 2],
-    #     student_cnn_filters=[128, 64, 32, 16, 8],
+    #     student_cnn_filters=[32, 32, 32, 32, 32],
     #     student_cnn_paddings=[0, 2, 2, 2, 2],
     #     student_cnn_dilations=[1, 1, 1, 1, 1]
     # )
     # policy = RslRlDistillationCNNStudentTeacherCfg(
-    #     class_name="CNN2d_StudentTeacher",
+    #     # class_name="CNN2d_StudentTeacher",
+    #     class_name="CNN2d_o1_StudentTeacher",
     #     init_noise_std=0.1,
     #     student_hidden_dims=[128, 128, 128], 
     #     teacher_hidden_dims=[128, 128, 128], 
@@ -115,7 +122,7 @@ class Go2RoughPPORunnerCfg_Policy(RslRlOnPolicyRunnerCfg):
     algorithm = RslRlDistillationAlgorithmCfg(
         num_learning_epochs=10,
         learning_rate=1e-4,
-        gradient_length=1
+        gradient_length=16
     )
 
 

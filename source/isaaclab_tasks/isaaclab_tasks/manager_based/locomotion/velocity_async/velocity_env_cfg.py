@@ -377,7 +377,7 @@ class RewardsCfg:
         params={
             "std": 0.05,
             "tanh_mult": 2.0,
-            "target_height": 0.05,
+            "target_height": 0.06,
             "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
         },
     )
@@ -432,7 +432,7 @@ class RewardsCfg:
     joint_acc = RewTerm(
         func=spot_mdp.joint_acceleration_penalty,
         weight=-1.0e-4,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint", ".*_thigh_joint"])},  # [".*_hip_joint", ".*_thigh_joint"]
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},  # [".*_hip_joint", ".*_thigh_joint"]
     )
 
     joint_pos = RewTerm(
@@ -454,7 +454,7 @@ class RewardsCfg:
     joint_vel = RewTerm(
         func=spot_mdp.joint_velocity_penalty,
         weight=-1.0e-2, 
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_hip_joint", ".*_thigh_joint"])},  # [".*_hip_joint", ".*_thigh_joint"]
+        params={"asset_cfg": SceneEntityCfg("robot", joint_names=".*")},  # [".*_hip_joint", ".*_thigh_joint"]
     )
 
     # -----------------------------------------------------------------------------------------------------------
@@ -580,10 +580,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 10
+        self.decimation = 4
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.002
+        self.sim.dt = 0.005
         self.sim.render_interval = self.decimation
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2**15

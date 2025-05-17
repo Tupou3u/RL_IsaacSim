@@ -19,7 +19,10 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # ------------------------------Sence------------------------------
         self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/base"
+        self.scene.height_scanner.pattern_cfg.resolution = 0.2
+        self.scene.height_scanner.pattern_cfg.size = [1.0, 1.0]
 
         self.scene.robot.init_state.joint_pos = {
             ".*L_hip_joint": 0.0,
@@ -29,25 +32,25 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
             ".*_calf_joint": -1.5,
         }
 
-        self.scene.robot.actuators = {
-            "legs": DelayedPDActuatorCfg(
-                joint_names_expr=[".*"],
-                effort_limit=23.5,
-                velocity_limit=30.0,
-                stiffness=25, 
-                damping=0.5, 
-                min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
-                max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
-            )
-        }
+        # self.scene.robot.actuators = {
+        #     "legs": DelayedPDActuatorCfg(
+        #         joint_names_expr=[".*"],
+        #         effort_limit=23.5,
+        #         velocity_limit=30.0,
+        #         stiffness=25, 
+        #         damping=0.5, 
+        #         min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
+        #         max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
+        #     )
+        # }
         
-        self.scene.terrain.terrain_generator.sub_terrains["flat"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 1.0
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 1.0
+        self.scene.terrain.terrain_generator.sub_terrains["flat"].proportion = 0.4
+        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.1
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.1
 
         self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.01, 0.15)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
@@ -65,10 +68,10 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # ------------------------------Events------------------------------
 
-        # self.events.randomize_rigid_joint_mass = None
-        # self.events.randomize_rigid_body_inertia = None
-        # self.events.randomize_com_positions = None
-        # self.events.randomize_apply_external_force_torque = None
+        self.events.randomize_rigid_joint_mass = None
+        self.events.randomize_rigid_body_inertia = None
+        self.events.randomize_com_positions = None
+        self.events.randomize_apply_external_force_torque = None
 
         self.events.randomize_reset_base.params = {
             "pose_range": {
@@ -96,6 +99,17 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         # ------------------------------Rewards------------------------------
 
+        # self.rewards.foot_clearance.weight = 0.0
+        # self.rewards.gait.weight = 0.0
+        # self.rewards.air_time_variance.weight = 0.0
+        # self.rewards.base_motion.weight = 0.0
+        # self.rewards.base_orientation.weight = 0.0
+        # self.rewards.foot_slip.weight = 0.0
+        # self.rewards.joint_pos.weight = 0.0
+        # self.rewards.undesired_contacts.weight = 0.0
+        # self.rewards.base_height_l2.weight = -10.0
+
+
         self.rewards.gait.weight = 0.0
         self.rewards.base_motion.weight = 0.0
         self.rewards.contact_forces.weight = -1e-3
@@ -104,7 +118,7 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.rewards.lin_vel_z_l2.weight = -2.0
         self.rewards.ang_vel_xy_l2.weight = -0.05
-        self.rewards.lin_acc_z_l2.weight = -0.05
+        self.rewards.lin_acc_z_l2.weight = 0.0
 
         # ------------------------------Terminations------------------------------
 

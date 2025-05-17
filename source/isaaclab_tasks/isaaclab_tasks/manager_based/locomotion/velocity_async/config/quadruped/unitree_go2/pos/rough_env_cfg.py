@@ -20,6 +20,8 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         # ------------------------------Sence------------------------------
         self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/base"
+        self.scene.height_scanner.pattern_cfg.resolution = 0.2
+        self.scene.height_scanner.pattern_cfg.size = [1.0, 1.0]
 
         self.scene.robot.init_state.joint_pos = {
             ".*L_hip_joint": 0.0,
@@ -29,27 +31,27 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
             ".*_calf_joint": -1.5,
         }
 
-        self.scene.robot.actuators = {
-            "legs": DelayedPDActuatorCfg(
-                joint_names_expr=[".*"],
-                effort_limit=23.5,
-                velocity_limit=30.0,
-                stiffness=25, 
-                damping=0.5, 
-                min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
-                max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
-            )
-        }
+        # self.scene.robot.actuators = {
+        #     "legs": DelayedPDActuatorCfg(
+        #         joint_names_expr=[".*"],
+        #         effort_limit=23.5,
+        #         velocity_limit=30.0,
+        #         stiffness=25, 
+        #         damping=0.5, 
+        #         min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
+        #         max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
+        #     )
+        # }
         
-        self.scene.terrain.terrain_generator.sub_terrains["flat"].proportion = 0.2
-        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.2
-        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.2
+        self.scene.terrain.terrain_generator.sub_terrains["flat"].proportion = 0.7
+        self.scene.terrain.terrain_generator.sub_terrains["boxes"].proportion = 0.0
+        self.scene.terrain.terrain_generator.sub_terrains["random_rough"].proportion = 0.3
         self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs"].proportion = 0.0
         self.scene.terrain.terrain_generator.sub_terrains["pyramid_stairs_inv"].proportion = 0.0
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.2
-        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.2
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope"].proportion = 0.0
+        self.scene.terrain.terrain_generator.sub_terrains["hf_pyramid_slope_inv"].proportion = 0.0
 
-        self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.01, 0.1)
+        self.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (0.01, 0.15)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_range = (0.01, 0.06)
         self.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = 0.01
 
@@ -64,6 +66,30 @@ class Go2RoughEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.actions.joint_pos.joint_names = self.joint_names
 
         # ------------------------------Events------------------------------
+
+        self.events.randomize_rigid_joint_mass = None
+        self.events.randomize_rigid_body_inertia = None
+        self.events.randomize_com_positions = None
+        self.events.randomize_apply_external_force_torque = None
+
+        self.events.randomize_reset_base.params = {
+            "pose_range": {
+                "x": (-0.5, 0.5),
+                "y": (-0.5, 0.5),
+                "z": (0.0, 0.2),
+                "roll": (-3.14, 3.14),
+                "pitch": (-3.14, 3.14),
+                "yaw": (-3.14, 3.14),
+            },
+            "velocity_range": {
+                "x": (-0.5, 0.5),
+                "y": (-0.5, 0.5),
+                "z": (-0.5, 0.5),
+                "roll": (-0.5, 0.5),
+                "pitch": (-0.5, 0.5),
+                "yaw": (-0.5, 0.5),
+            },
+        }
 
         # ------------------------------Rewards------------------------------
 
