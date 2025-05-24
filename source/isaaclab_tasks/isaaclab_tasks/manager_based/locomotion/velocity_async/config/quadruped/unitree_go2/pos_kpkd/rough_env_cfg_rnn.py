@@ -20,6 +20,8 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
         # ------------------------------Sence------------------------------
         self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/base"
+        self.scene.height_scanner.pattern_cfg.resolution = 0.2
+        self.scene.height_scanner.pattern_cfg.size = [1.0, 1.0]
 
         self.scene.robot.init_state.joint_pos = {
             ".*L_hip_joint": 0.0,
@@ -29,15 +31,25 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
             ".*_calf_joint": -1.5,
         }
 
+        # self.scene.robot.actuators = {
+        #     "legs": DelayedPDActuatorCfg(
+        #         joint_names_expr=[".*"],
+        #         effort_limit=23.5,
+        #         velocity_limit=30.0,
+        #         stiffness=25, 
+        #         damping=0.5, 
+        #         min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
+        #         max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
+        #     )
+        # }
+
         self.scene.robot.actuators = {
-            "legs": DelayedPDActuatorCfg(
+            "legs": ImplicitActuatorCfg(
                 joint_names_expr=[".*"],
                 effort_limit=23.5,
                 velocity_limit=30.0,
-                stiffness=25, 
-                damping=0.5, 
-                min_delay=0,  # physics time steps (min: 2.0*0=0.0ms)
-                max_delay=4,  # physics time steps (max: 2.0*4=8.0ms)
+                stiffness=0.0, 
+                damping=0.0
             )
         }
         
@@ -61,8 +73,11 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
         # ------------------------------Actions------------------------------
 
         self.actions.joint_pos.scale = 0.25
-        self.actions.joint_pos.clip={".*": (-10.0, 10.0)}
         self.actions.joint_pos.joint_names = self.joint_names
+        self.actions.joint_stiffness.scale = 0.1
+        self.actions.joint_stiffness.joint_names = self.joint_names
+        self.actions.joint_damping.scale = 0.1
+        self.actions.joint_damping.joint_names = self.joint_names
 
         # ------------------------------Events------------------------------
 
@@ -71,43 +86,47 @@ class Go2RoughEnvCfg_rnn(LocomotionVelocityRoughEnvCfg):
         self.events.randomize_com_positions = None
         self.events.randomize_apply_external_force_torque = None
 
-        self.events.randomize_reset_base.params = {
-            "pose_range": {
-                "x": (-0.5, 0.5),
-                "y": (-0.5, 0.5),
-                "z": (0.0, 0.2),
-                "roll": (-3.14, 3.14),
-                "pitch": (-3.14, 3.14),
-                "yaw": (-3.14, 3.14),
-            },
-            "velocity_range": {
-                "x": (-0.5, 0.5),
-                "y": (-0.5, 0.5),
-                "z": (-0.5, 0.5),
-                "roll": (-0.5, 0.5),
-                "pitch": (-0.5, 0.5),
-                "yaw": (-0.5, 0.5),
-            },
-        }
+        # self.events.randomize_reset_base.params = {
+        #     "pose_range": {
+        #         "x": (-0.5, 0.5),
+        #         "y": (-0.5, 0.5),
+        #         "z": (0.0, 0.2),
+        #         "roll": (-3.14, 3.14),
+        #         "pitch": (-3.14, 3.14),
+        #         "yaw": (-3.14, 3.14),
+        #     },
+        #     "velocity_range": {
+        #         "x": (-0.5, 0.5),
+        #         "y": (-0.5, 0.5),
+        #         "z": (-0.5, 0.5),
+        #         "roll": (-0.5, 0.5),
+        #         "pitch": (-0.5, 0.5),
+        #         "yaw": (-0.5, 0.5),
+        #     },
+        # }
 
         # ------------------------------Rewards------------------------------
 
-        self.rewards.foot_clearance.weight = 0.0
-        self.rewards.gait.weight = 0.0
-        self.rewards.air_time_variance.weight = 0.0
-        self.rewards.base_orientation.weight = 0.0
-        self.rewards.foot_slip.weight = 0.0
-        self.rewards.joint_pos.weight = 0.0
-        self.rewards.undesired_contacts.weight = 0.0
-        self.rewards.base_height_l2.weight = -10.0
-        
+        # self.rewards.foot_clearance.weight = 0.0
         # self.rewards.gait.weight = 0.0
-        # self.rewards.feet_contact_without_cmd.weight = 0.25
-        # self.rewards.joint_pos_limits.weight = -10.0
+        # self.rewards.air_time_variance.weight = 0.0
+        # self.rewards.base_motion.weight = 0.0
+        # self.rewards.base_orientation.weight = 0.0
+        # self.rewards.foot_slip.weight = 0.0
+        # self.rewards.joint_pos.weight = 0.0
+        # self.rewards.undesired_contacts.weight = 0.0
+        # self.rewards.base_height_l2.weight = -10.0
+        
+        
+        self.rewards.gait.weight = 0.0
+        self.rewards.base_motion.weight = 0.0
+        self.rewards.contact_forces.weight = -1e-3
+        self.rewards.feet_contact_without_cmd.weight = 0.25
+        self.rewards.joint_pos_limits.weight = -10.0
 
-        # self.rewards.lin_vel_z_l2.weight = -2.0
-        # self.rewards.ang_vel_xy_l2.weight = -0.05
-        # self.rewards.joint_sync.weight = -0.05
+        self.rewards.lin_vel_z_l2.weight = -2.0
+        self.rewards.ang_vel_xy_l2.weight = -0.05
+        self.rewards.lin_acc_z_l2.weight = 0.0
 
         # ------------------------------Terminations------------------------------
 

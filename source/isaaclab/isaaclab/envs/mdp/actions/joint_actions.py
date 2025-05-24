@@ -223,3 +223,29 @@ class JointEffortAction(JointAction):
     def apply_actions(self):
         # set joint effort targets
         self._asset.set_joint_effort_target(self.processed_actions, joint_ids=self._joint_ids)
+
+
+class JointStiffnessAction(JointAction):
+    cfg: actions_cfg.JointStiffnessActionCfg
+
+    def __init__(self, cfg: actions_cfg.JointStiffnessActionCfg, env: ManagerBasedEnv):
+        super().__init__(cfg, env)
+
+        if cfg.use_default_offset:
+            self._offset = torch.ones(env.num_envs, 12).to('cuda') * 25
+
+    def apply_actions(self):
+        self._asset.write_joint_stiffness_to_sim(self.processed_actions, joint_ids=self._joint_ids)
+
+
+class JointDampingAction(JointAction):
+    cfg: actions_cfg.JointDampingActionCfg
+
+    def __init__(self, cfg: actions_cfg.JointDampingActionCfg, env: ManagerBasedEnv):
+        super().__init__(cfg, env)
+
+        if cfg.use_default_offset:
+            self._offset = torch.ones(env.num_envs, 12).to('cuda') * 0.5
+
+    def apply_actions(self):
+        self._asset.write_joint_damping_to_sim(self.processed_actions, joint_ids=self._joint_ids)

@@ -50,4 +50,26 @@ gym.register(
     },
 )
 
+# ----------------------------------- Position KpKd Control RNN ----------------------------------- #
+
+gym.register(
+    id="Go2-Velocity-PositionKpKdControlRNN-Flat-Async",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.pos_kpkd.flat_env_cfg_rnn:Go2FlatEnvCfg_rnn",
+        "rsl_rl_cfg_entry_point": f"{__name__}.pos_kpkd.agents.rsl_rl_ppo_cfg_rnn:Go2FlatPPORunnerCfg_rnn",
+    },
+)
+
+gym.register(
+    id="Go2-Velocity-PositionKpKdControlRNN-Rough-Async",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.pos_kpkd.rough_env_cfg_rnn:Go2RoughEnvCfg_rnn",
+        "rsl_rl_cfg_entry_point": f"{__name__}.pos_kpkd.agents.rsl_rl_ppo_cfg_rnn:Go2RoughPPORunnerCfg_rnn",
+    },
+)
+
 

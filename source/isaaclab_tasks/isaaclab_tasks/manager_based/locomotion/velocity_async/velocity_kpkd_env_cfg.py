@@ -60,7 +60,7 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
         attach_yaw_only=True,
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[1.0, 1.0]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
@@ -121,6 +121,22 @@ class ActionsCfg:
         preserve_order=True
     )
 
+    joint_stiffness = mdp.JointStiffnessActionCfg(
+        asset_name="robot", 
+        joint_names=[".*"], 
+        scale=1.0, 
+        clip=None, 
+        preserve_order=True
+    )
+
+    joint_damping = mdp.JointDampingActionCfg(
+        asset_name="robot", 
+        joint_names=[".*"], 
+        scale=1.0, 
+        clip=None, 
+        preserve_order=True
+    )
+
 
 @configclass
 class ObservationsCfg:
@@ -141,11 +157,6 @@ class ObservationsCfg:
             noise=Unoise(n_min=-0.1, n_max=0.1), 
             scale=1.0,
             clip=(-100, 100),
-        )
-        projected_gravity = ObsTerm(
-            func=mdp.projected_gravity,
-            noise=Unoise(n_min=-0.1, n_max=0.1), 
-            scale=1.0,
         )
         velocity_commands = ObsTerm(
             func=mdp.generated_commands,
@@ -187,10 +198,6 @@ class ObservationsCfg:
             func=mdp.imu_lin_acc,
             scale=1.0,
             clip=(-100, 100),
-        )
-        projected_gravity = ObsTerm(
-            func=mdp.projected_gravity, 
-            scale=1.0,
         )
         velocity_commands = ObsTerm(
             func=mdp.generated_commands,
@@ -285,7 +292,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "com_distribution_params": ((-0.1, 0.1), (-0.01, 0.01), (0.0, 0.05)),
+            "com_distribution_params": ((-0.1, 0.1), (-0.05, 0.05), (-0.05, 0.05)),
             "operation": "add",
         },
     )
@@ -372,18 +379,18 @@ class RewardsCfg:
 
     base_linear_velocity = RewTerm(
         func=mdp.track_lin_vel_world_xy_exp,
-        weight=3.0,
+        weight=5.0,
         params={
-            "std": math.sqrt(0.25), 
+            "std": 1.0, 
             "asset_cfg": SceneEntityCfg("robot")
         },
     )
     
     base_angular_velocity = RewTerm(
-        func=mdp.track_ang_vel_world_z_exp,
-        weight=1.5,
+        func=mdp.track_ang_vel_z_world_exp,
+        weight=5.0,
         params={
-            "std": math.sqrt(0.25), 
+            "std": 2.0, 
             "asset_cfg": SceneEntityCfg("robot")
         },
     )
@@ -595,10 +602,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 10
         self.episode_length_s = 20.0
         # simulation settings
-        self.sim.dt = 0.005
+        self.sim.dt = 0.002
         self.sim.render_interval = self.decimation
         self.sim.physics_material = self.scene.terrain.physics_material
         self.sim.physx.gpu_max_rigid_patch_count = 10 * 2**15

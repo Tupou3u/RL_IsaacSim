@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 
 from isaaclab.assets import Articulation, RigidObject
 from isaaclab.managers import ManagerTermBase, SceneEntityCfg
-from isaaclab.sensors import ContactSensor
+from isaaclab.sensors import ContactSensor, RayCaster
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -56,39 +56,6 @@ def air_time_reward(
         stance_cmd_reward,
     )
     return torch.sum(reward, dim=1)
-
-
-# def dynamic_air_time_reward(
-#     env: ManagerBasedRLEnv,
-#     asset_cfg: SceneEntityCfg,
-#     sensor_cfg: SceneEntityCfg,
-#     alpha: float,
-#     beta: float
-# ) -> torch.Tensor:
-#     """Reward longer feet air and contact time."""
-#     # extract the used quantities (to enable type-hinting)
-#     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-#     asset: Articulation = env.scene[asset_cfg.name]
-#     if contact_sensor.cfg.track_air_time is False:
-#         raise RuntimeError("Activate ContactSensor's track_air_time!")
-#     # compute the reward
-#     current_air_time = contact_sensor.data.current_air_time[:, sensor_cfg.body_ids]
-#     current_contact_time = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids]
-
-#     body_vel = torch.linalg.norm(asset.data.root_lin_vel_b[:, :2], dim=1).unsqueeze(dim=1).expand(-1, 4)
-#     mode_time = alpha * body_vel + beta
-
-#     t_max = torch.max(current_air_time, current_contact_time)
-#     t_min = torch.clip(t_max, max=mode_time)
-#     stance_cmd_reward = torch.clip(current_contact_time - current_air_time, -mode_time, mode_time)
-#     cmd = torch.norm(env.command_manager.get_command("base_velocity"), dim=1).unsqueeze(dim=1).expand(-1, 4)
-    
-#     reward = torch.where(
-#         cmd > 0.0,
-#         torch.where(t_max < mode_time, t_min, 0),
-#         stance_cmd_reward,
-#     )
-#     return torch.sum(reward, dim=1)
 
 
 def base_angular_velocity_reward(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, std: float) -> torch.Tensor:
@@ -212,11 +179,27 @@ class GaitReward(ManagerTermBase):
 
 
 def foot_clearance_reward(
-    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, target_height: float, std: float, tanh_mult: float
+    env: ManagerBasedRLEnv, 
+    asset_cfg: SceneEntityCfg,
+    target_height: float, 
+    std: float, 
+    tanh_mult: float,
+    sensor_cfg: SceneEntityCfg | None = None,
 ) -> torch.Tensor:
     """Reward the swinging feet for clearing a specified height off the ground"""
     asset: RigidObject = env.scene[asset_cfg.name]
-    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - target_height)
+
+    if sensor_cfg is not None:
+        sensor: RayCaster = env.scene[sensor_cfg.name]
+        ray_hits = sensor.data.ray_hits_w[..., 2]
+        if torch.isnan(ray_hits).any() or torch.isinf(ray_hits).any() or torch.max(torch.abs(ray_hits)) > 1e6:
+            adjusted_target_height = asset.data.root_link_pos_w[:, 2]
+        else:
+            adjusted_target_height = target_height + torch.mean(ray_hits, dim=1)
+    else:
+        adjusted_target_height = target_height
+
+    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - adjusted_target_height.unsqueeze(1))
     foot_velocity_tanh = torch.tanh(tanh_mult * torch.norm(asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2], dim=2))
     reward = foot_z_target_error * foot_velocity_tanh
     return torch.exp(-torch.sum(reward, dim=1) / std)

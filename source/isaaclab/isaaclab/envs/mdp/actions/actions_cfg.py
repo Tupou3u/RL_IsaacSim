@@ -94,6 +94,18 @@ class JointEffortActionCfg(JointActionCfg):
     class_type: type[ActionTerm] = joint_actions.JointEffortAction
 
 
+@configclass
+class JointStiffnessActionCfg(JointActionCfg):
+    class_type: type[ActionTerm] = joint_actions.JointStiffnessAction
+    use_default_offset: bool = True
+
+
+@configclass
+class JointDampingActionCfg(JointActionCfg):
+    class_type: type[ActionTerm] = joint_actions.JointDampingAction
+    use_default_offset: bool = True
+
+
 ##
 # Joint actions rescaled to limits.
 ##

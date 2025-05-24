@@ -10,6 +10,9 @@ from isaaclab.assets import Articulation
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.actuators import DelayedPDActuatorCfg
 from isaaclab.sensors import ContactSensor, Imu
+import isaaclab.utils.math as math_utils
+
+GRAVITY_VEC = torch.tensor([[0.0, 0.0, -1.0]])
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
@@ -87,3 +90,9 @@ def delays(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg) -> torch.Tensor:
 def contact_forces_obs(env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     return contact_sensor.data.net_forces_w[:, sensor_cfg.body_ids].reshape(env.num_envs, -1)
+
+
+def projected_gravity_imu(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("imu")) -> torch.Tensor:
+    asset: Imu = env.scene[asset_cfg.name]
+    quat = asset.data.quat_w
+    return math_utils.quat_rotate_inverse(quat, GRAVITY_VEC.repeat(env.num_envs, 1).to(env.device))
